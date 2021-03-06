@@ -1,0 +1,76 @@
+### Ricky Thomas EXAM1 CIS 33368###
+### Importing the needed pluging###
+import _json
+import requests
+import datetime
+from datetime import date
+import mysql.connector
+import pandas as pd
+
+# The coding below is part of the SQL connection clause that will help connect the database to python
+# It allows a output statement to confirm that the Database has been connected correctly to python
+# It also will give a statement if the connection is unsuccessful
+
+def create_connection(host_name, user_name, user_password, db_name):
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host_name,
+            user=user_name,
+            passwd=user_password,
+            database=db_name
+        )
+        print("Connection to MySQL DB successful")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+    return connection
+
+# The coding below is to be able to send the written query in python to the SQL database
+# If the query os successfully sent and accepted into the sql database it will display execute message or error
+def execute_query(connection, query):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        connection.commit()
+        print("Query executed successfully")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+
+def execute_read_query(connection, query):
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+# The coding below goes with with the connection clause above it takes the information that is made with AWS
+# and allows the cloud connection to the SQL database.
+connection = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+
+### The coding below asks for the user input of the state and date.
+### The input was then used to parse into the json url which allows to pull the information from that date and states.
+
+t=input("Enter the state for which the COVID data should be retrieved (e.g. TX):")
+r=input("Enter the date for which the COVID data should be retrieved (e.g. 20201219):")
+response = requests.get(" https://api.covidtracking.com/v1/states/"+t+"/"+r+".json")
+c19_response= (response.json())
+
+### The below coding takes the inputs that for the date and state and prints it.
+print("State:%s"% (t))
+print ("Date:%s"% (r))
+###The code  below takes the full json data and filter it for the categorys postive,death,postiveincrease and death increase.
+c19_positive=c19_response['positive']
+print("Postive cases: %s" % (c19_positive))
+c19_death=c19_response['death']
+print("Death: %s" % (c19_death))
+c19_pi=c19_response['positiveIncrease']
+c19_di=c19_response['deathIncrease']
+### the code below takes the information pulled from the json and the inputs and inserts it into the sql database
+query = "INSERT INTO exam1 (date_, state,positiveIncrease,deathIncrease) VALUES('%s', '%s', '%s','%s')" % (
+            r, t, c19_pi,c19_di)
+execute_query(connection, query)
