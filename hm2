@@ -1,0 +1,141 @@
+### Ricky Thomas EXAM1 CIS 33368###
+### Importing the needed pluging###
+import _json
+import requests
+import datetime
+from datetime import date
+import mysql.connector
+import pandas as pd
+
+class movie:
+    def __init__(self, movieid, title, year_, genre, rating):
+        self.moveid = movieid
+        self.title = title
+        self.year_ = year_
+        self.genre = genre
+        self.rating = rating
+
+# The coding below is part of the SQL connection clause that will help connect the database to python
+# It allows a output statement to confirm that the Database has been connected correctly to python
+# It also will give a statement if the connection is unsuccessful
+
+def create_connection(host_name, user_name, user_password, db_name):
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host_name,
+            user=user_name,
+            passwd=user_password,
+            database=db_name
+        )
+        print("Connection to MySQL DB successful")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+    return connection
+
+# The coding below is to be able to send the written query in python to the SQL database
+# If the query os successfully sent and accepted into the sql database it will display execute message or error
+def execute_query(connection, query):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        connection.commit()
+        print("Query executed successfully")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+
+def execute_read_query(connection, query):
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+# The coding below goes with with the connection clause above it takes the information that is made with AWS
+# and allows the cloud connection to the SQL database.
+connection = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+
+select_movie = "SELECT * FROM results"
+movies = execute_read_query(connection, select_movie)
+
+def print_menu():
+    print ("""
+    MENU
+    [a] Search Movie
+    [d] Add Movie to Database
+    [b] Output all Movies in Database in alphabetical order
+    [c] Output all Movies in Database by Released Date 
+    [o] Output all Movies in Database
+    [q] Quit""")
+
+# the coding below allows the looping of the menu after a a selection is made and finished the menu can reappear
+loop = True
+
+while loop:
+    print_menu()
+    menu = input("Choose an option: ")
+
+    if menu == 'a':
+        a = input("What is the name of the movie?")
+        b = input("What year was the movie released?")
+        am = a.replace(" ","+")
+        response = requests.get(" http://www.omdbapi.com/?t="+am+"&y="+b+"&apikey=40b67c4a")
+        a_response=(response.json())
+        a_title=a_response["Title"]
+        a_year=a_response["Year"]
+        a_rated = a_response["Rated"]
+        a_gen=a_response["Genre"]
+        print("Name: %s" %(a_title))
+        print("Year: %s" %(a_year))
+        print("Rating: %s" %(a_rated))
+        print("Genre: %s" %(a_gen))
+
+    elif menu == 'd':
+        a = input("What is the name of the movie?")
+        b = input("What year was the movie released?")
+        am = a.replace(" ", "+")
+        response = requests.get(" http://www.omdbapi.com/?t=" + am + "&y=" + b + "&apikey=40b67c4a")
+        a_response = (response.json())
+
+        a_title = a_response.get["Title"]
+        a_year = a_response["Year"]
+        a_rated = a_response["Rated"]
+        a_gen = a_response["Genre"]
+        print("Name: %s" % (a_title))
+        print("Year: %s" % (a_year))
+        print("Rating: %s" % (a_rated))
+        print("Genre: %s" % (a_gen))
+        query = "INSERT INTO results (title, year_,genre, rating) VALUES('%s', '%s', '%s','%s')" % (
+            a_title, a_year, a_gen,a_rated  )
+        execute_query(connection, query)
+
+    elif menu == 'o':
+        select_movie = "SELECT * FROM results"
+        movies = execute_read_query(connection, select_movie)
+
+        for movie in movies:
+            print(movie[0], movie[1], movie[2], movie[3], movie[4])
+
+    elif menu == 'b':
+        select_moviesby = "SELECT * FROM results order by title"
+        movies = execute_read_query(connection, select_moviesby)
+        for movie in movies:
+            print(movie[0], movie[1], movie[2], movie[3], movie[4])
+
+    elif menu == 'c':
+        select_moviesbyd = "SELECT * FROM results order by year_ "
+        movies = execute_read_query(connection, select_moviesbyd)
+
+        for movie in movies:
+            print(movie[0], movie[1],movie[2], movie[3], movie[4])
+
+    elif menu == 'q':
+        print("goodbye")
+        exit()
+    else:
+        print("Invaild Selection")
