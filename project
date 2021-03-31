@@ -36,15 +36,12 @@ def create_connection(host_name, user_name, user_password, db_name):
 app = flask.Flask(__name__) #set up application
 app.config["DEBUG"] = True #allow to show error message in browser
 
-
-@app.route('/api/friend', methods=['GET']) #API to get our users from mySQL table in AWS as JSON response
-def api_user_id():
-    if 'id' in request.args:
+@app.route('/api/friend', methods=['GET'])
+def api_friend_id():
+    if 'id' in request.args: #only if an id is provided as an argument, proceed
         id = int(request.args['id'])
     else:
-        return "Error: No id provided."
-
-
+        return 'ERROR: No ID provided!'
 
     conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
     cursor = conn.cursor(dictionary=True)
@@ -52,15 +49,35 @@ def api_user_id():
     cursor.execute(sql)
     rows = cursor.fetchall()
     results = []
-    for user in rows:
-        if user['id'] == id:
-            results.append(user)
+    for friend in rows:
+        if friend['friend_id'] == id:
+            results.append(friend)
+
+    return jsonify(results)
+
+
+@app.route('/api/movielist', methods=['GET'])
+def api_movielist_id():
+    if 'id' in request.args:  # only if an id is provided as an argument, proceed
+        id = int(request.args['id'])
+    else:
+        return 'ERROR: No ID provided!'
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    cursor = conn.cursor(dictionary=True)
+    sql = "SELECT * FROM movielist"
+    cursor.execute(sql)
+    rows = cursor.fetchall()
+    results = []
+    for movie_list in rows:
+        if movie_list['movielist_id'] == id:
+            results.append(movie_list)
 
     return jsonify(results)
 
 # Adding a user to my database of users
 @app.route('/api/addfriend', methods=['POST'])
-def adduser():
+def addfriend():
     request_data = request.get_json()
     last_name = request_data['last_name']
     first_name = request_data['first_name']
@@ -69,8 +86,9 @@ def adduser():
     query = "INSERT INTO friend (last_name, first_name) VALUES ('"+last_name+"','"+first_name+ "')"
     execute_query(conn, query)
     return 'POST REQUEST WORKED'
+
 @app.route('/api/addmovielist', methods=['POST'])
-def adduser():
+def addmovielist():
     request_data = request.get_json()
     friend_id = request_data['friend_id']
     movie1 = request_data['movie1']
@@ -91,4 +109,5 @@ def adduser():
 
 
 app.run()
+
 
