@@ -1,0 +1,184 @@
+import flask
+from flask import jsonify
+from flask import request
+import mysql.connector
+import datetime
+import make_response
+from mysql.connector import Error
+
+def execute_query(connection, query):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        connection.commit()
+        print("Query executed successfully")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+def create_connection(host_name, user_name, user_password, db_name):
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host_name,
+            user=user_name,
+            passwd=user_password,
+            database=db_name
+        )
+        print("Connection to MySQL DB successful")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+    return connection
+
+
+
+# setting up an application name
+app = flask.Flask(__name__) #set up application
+app.config["DEBUG"] = True #allow to show error message in browser
+
+@app.route('/api/friend', methods=['GET'])
+def api_friend_id():
+    if 'id' in request.args: #only if an id is provided as an argument, proceed
+        id = int(request.args['id'])
+    else:
+        return 'ERROR: No ID provided!'
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    cursor = conn.cursor(dictionary=True)
+    sql = "SELECT * FROM friend"
+    cursor.execute(sql)
+    rows = cursor.fetchall()
+    results = []
+    for friend in rows:
+        if friend['friend_id'] == id:
+            results.append(friend)
+
+    return jsonify(results)
+
+
+@app.route('/api/movielist', methods=['GET'])
+def api_movielist_id():
+    if 'id' in request.args:  # only if an id is provided as an argument, proceed
+        id = int(request.args['id'])
+    else:
+        return 'ERROR: No ID provided!'
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    cursor = conn.cursor(dictionary=True)
+    sql = "SELECT * FROM movielist"
+    cursor.execute(sql)
+    rows = cursor.fetchall()
+    results = []
+    for movie_list in rows:
+        if movie_list['movielist_id'] == id:
+            results.append(movie_list)
+
+    return jsonify(results)
+
+# Adding a user to my database of users
+@app.route('/api/addfriend', methods=['POST'])
+def addfriend():
+    request_data = request.get_json()
+    last_name = request_data['last_name']
+    first_name = request_data['first_name']
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "INSERT INTO friend (last_name, first_name) VALUES ('"+last_name+"','"+first_name+ "')"
+    execute_query(conn, query)
+    return 'POST REQUEST WORKED'
+
+@app.route('/api/addmovielist', methods=['POST'])
+def addmovielist():
+    request_data = request.get_json()
+    friend_id = request_data['friend_id']
+    movie1 = request_data['movie1']
+    movie2 = request_data['movie2']
+    movie3 = request_data['movie3']
+    movie4 = request_data['movie4']
+    movie5 = request_data['movie5']
+    movie6 = request_data['movie6']
+    movie7 = request_data['movie7']
+    movie8 = request_data['movie8']
+    movie9 = request_data['movie9']
+    movie10 = request_data['movie10']
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "INSERT INTO movielist (friend_id, movie1,movie2,movie3,movie4,movie5,movie6,movie7,movie8,movie9,movie10) VALUES ('"+friend_id+"','"+movie1+ "','"+movie2+ "','"+movie3+ "','"+movie4+ "','"+movie5+ "','"+movie6+ "','"+movie7+ "','"+movie8+ "','"+movie9+ "','"+movie10+ "')"
+    execute_query(conn, query)
+    return 'POST REQUEST WORKED'
+
+@app.route('/api/deletefriend', methods=['delete'])
+def deletefriend():
+    request_data = request.get_json()
+    friend_id = request_data['friend_id']
+
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "delete from friend where friend_id = "+friend_id+""
+    execute_query(conn, query)
+    return 'Delete REQUEST WORKED'
+
+# Code for Movie List APi Delete
+@app.route('/api/deletemovielist', methods=['delete'])
+def deletemovie():
+    request_data = request.get_json()
+    movielist_id = request_data['movielist_id']
+
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "delete from movielist where movielist_id = "+movielist_id+""
+    execute_query(conn, query)
+    return 'Delete REQUEST WORKED'
+
+@app.route('/api/updatefriend', methods=['put'])
+def updatefriend():
+    request_data = request.get_json()
+    friend_id = request_data['friend_id']
+    last_name = request_data['last_name']
+    first_name= request_data['first_name']
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "update  friend set last_name = ('%s'), first_name = ('%s')  where friend_id = (%s) " % (last_name,first_name,friend_id)
+    execute_query(conn, query)
+    return 'update REQUEST WORKED'
+
+
+@app.route('/api/updatemovielist', methods=['put'])
+def updatemovie():
+    request_data = request.get_json()
+    friend_id = request_data['friend_id']
+    movie2 = request_data['movie2']
+    movie10 = request_data['movie10']
+    movie9 = request_data['movie9']
+    movie8 = request_data['movie8']
+    movie7 = request_data['movie7']
+    movie6 = request_data['movie6']
+    movie5 = request_data['movie5']
+    movie4 = request_data['movie4']
+    movie3 = request_data['movie3']
+    movie1 = request_data['movie1']
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    query = "update  movielist set movie1 =('%s'),  movie2 = ('%s') , movie3 = ('%s'),  movie4 = ('%s'),  movie5 = ('%s'),  movie6 = ('%s') ,  movie7 = ('%s'),  movie8 = ('%s'),  movie9 = ('%s'),  movie10 = ('%s') where friend_id = (%s)" % (movie1,movie2,movie3,movie4,movie5,movie6,movie7,movie8,movie9,movie10 ,friend_id)
+    execute_query(conn, query)
+    return 'update REQUEST WORKED'
+
+@app.route('/api/random', methods=['GET'])
+def api_random_id():
+    if 'friend_id' in request.args: #only if an id is provided as an argument, proceed
+        id = (request.args['friend_id'])
+    else:
+        return 'ERROR: No ID provided!'
+
+    conn = create_connection("cis3368v2.cis8xwguc2c4.us-east-2.rds.amazonaws.com", "admin", "e1529378", "cis3368v2")
+    cursor = conn.cursor(dictionary=True)
+    sql = "SELECT friend_id,movie1 FROM movielist where friend_id in ("+id+") ORDER BY RAND()LIMIT 1;"
+    cursor.execute(sql)
+    rows = cursor.fetchall()
+    results = []
+    for friend in rows:
+        if friend['friend_id']:
+            results.append(friend)
+
+    return jsonify(results)
+
+app.run()
